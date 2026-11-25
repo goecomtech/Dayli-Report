@@ -211,25 +211,17 @@ CloudPanel-এ PHP 8.2/8.3 ডিফল্টভাবেই OPcache অন থ�
 
 আপনি যখনই গিটহাবে কোনো কোড আপডেট বা পুশ করবেন, সার্ভারে স্বয়ংক্রিয়ভাবে সেই আপডেট লাইভ হয়ে যাওয়ার ব্যবস্থা সম্পূর্ণ প্রস্তুত করা হয়েছে:
 
-### ধাপ ১: গিটহাবে একটি নতুন রিপোজিটরি তৈরি করুন
-1. আপনার GitHub একাউন্টে গিয়ে **New Repository** তৈরি করুন (যেমন: `lfp-daily-reporting`)।
-2. রিপোজিটরি **Private** অথবা **Public** রাখতে পারেন।
-3. আপনার কম্পিউটার থেকে কোড পুশ করুন:
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial commit with hybrid db and auto deploy"
-   git branch -M main
-   git remote add origin https://github.com/{your-username}/lfp-daily-reporting.git
-   git push -u origin main
-   ```
+### ধাপ ১: গিটহাবে রিপোজিটরি তৈরি ও সিঙ্ক
+1. আপনার GitHub রিপোজিটরি প্রস্তুত করা হয়েছে:
+   `https://github.com/goecomtech/Dayli-Report.git`
+2. লোকাল ফোল্ডার থেকে সম্পূর্ণ কোড এই রিপোজিটরিতে সিঙ্ক করা রয়েছে।
 
 ### ধাপ ২: CloudPanel VPS-এ গিট রিপোজিটরি কানেক্ট করা (১ বার করলেই হবে)
 CloudPanel-এর সাইট ড্যাশবোর্ড থেকে **SSH User** বা টার্মিনালে প্রবেশ করে আপনার সাইট ফোল্ডারে যান:
 ```bash
 cd /home/{site-user}/htdocs/{domain-name}
 git init
-git remote add origin https://github.com/{your-username}/lfp-daily-reporting.git
+git remote add origin https://github.com/goecomtech/Dayli-Report.git
 git fetch origin main
 git checkout -f main
 ```

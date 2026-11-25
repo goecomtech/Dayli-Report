@@ -16,7 +16,7 @@ if (file_exists($configPath)) {
 }
 
 $expectedSecret = $config['deploy_secret'] ?? 'lfp_github_deploy_2026';
-$githubRepo = $config['github_repo'] ?? 'lifefreepro/lfp-daily-reporting'; // owner/repo
+$githubRepo = $config['github_repo'] ?? 'goecomtech/Dayli-Report'; // owner/repo
 $currentVersion = $config['version'] ?? '3.5.0';
 
 $action = $_GET['action'] ?? ($_POST['action'] ?? 'webhook');
