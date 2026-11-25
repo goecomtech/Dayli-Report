@@ -2037,6 +2037,77 @@ class LfpApp {
     }
   }
 
+  async checkGithubUpdate() {
+    const btn = document.getElementById('btnCheckGithubUpdate');
+    const applyBtn = document.getElementById('btnApplyGithubUpdate');
+    const statusEl = document.getElementById('githubUpdateStatus');
+    const badge = document.getElementById('githubVersionBadge');
+
+    if (btn) btn.disabled = true;
+    if (statusEl) statusEl.innerHTML = '<span class="text-primary">⏳ গিটহাব এপিআই থেকে নতুন ভার্সন চেক করা হচ্ছে...</span>';
+
+    try {
+      const res = await fetch('deploy.php?action=checkUpdate&t=' + Date.now());
+      const data = await res.json();
+      if (data.success) {
+        if (data.hasUpdate) {
+          if (badge) {
+            badge.style.background = '#fef08a';
+            badge.style.color = '#854d0e';
+            badge.textContent = `🚀 নতুন আপডেট: ${data.latestCommit}`;
+          }
+          if (statusEl) {
+            statusEl.innerHTML = `<span class="text-success font-bold">✨ নতুন আপডেট উপলব্ধ: "${data.commitMessage || data.latestCommit}" (${data.latestCommit})</span>`;
+          }
+          if (applyBtn) applyBtn.style.display = 'inline-flex';
+        } else {
+          if (badge) {
+            badge.style.background = '#dcfce7';
+            badge.style.color = '#166534';
+            badge.textContent = `✅ আপ-টু-ডেট (${data.latestCommit || 'v3.5'})`;
+          }
+          if (statusEl) {
+            statusEl.innerHTML = `<span class="text-success">✅ আপনার সিস্টেম সম্পূর্ণ আপ-টু-ডেট আছে!</span>`;
+          }
+          if (applyBtn) applyBtn.style.display = 'none';
+        }
+      } else {
+        if (statusEl) statusEl.innerHTML = `<span class="text-danger">❌ ${data.message}</span>`;
+      }
+    } catch (e) {
+      if (statusEl) statusEl.innerHTML = `<span class="text-danger">❌ চেক ব্যর্থ: ${e.message}</span>`;
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  async applyGithubUpdate() {
+    if (!confirm('আপনি কি নিশ্চিত যে গিটহাব থেকে সর্বশেষ কোড ডাউনলোড করে এই সাইটে লাইভ ইনস্টল করতে চান?')) {
+      return;
+    }
+    const applyBtn = document.getElementById('btnApplyGithubUpdate');
+    const statusEl = document.getElementById('githubUpdateStatus');
+    if (applyBtn) applyBtn.disabled = true;
+    if (statusEl) statusEl.innerHTML = '<span class="text-primary">⬇️ গিটহাব থেকে ফাইল ডাউনলোড ও আপডেট হচ্ছে, অনুগ্রহ করে কয়েক সেকেন্ড অপেক্ষা করুন...</span>';
+
+    try {
+      const res = await fetch('deploy.php?action=applyUpdateApi&token=lfp_github_deploy_2026&t=' + Date.now());
+      const data = await res.json();
+      if (data.success) {
+        alert(data.message || 'আপডেট সফলভাবে ইনস্টল হয়েছে!');
+        window.location.reload();
+      } else {
+        alert('আপডেট ব্যর্থ: ' + (data.message || 'ত্রুটি'));
+        if (statusEl) statusEl.innerHTML = `<span class="text-danger">❌ ${data.message}</span>`;
+      }
+    } catch (e) {
+      alert('ত্রুটি: ' + e.message);
+      if (statusEl) statusEl.innerHTML = `<span class="text-danger">❌ ত্রুটি: ${e.message}</span>`;
+    } finally {
+      if (applyBtn) applyBtn.disabled = false;
+    }
+  }
+
   async runDeduplication() {
     if (!confirm('আপনি কি গুগল শিটের সমস্ত ডুপ্লিকেট এন্ট্রি মুছে সম্পূর্ণ পরিচ্ছন্ন করতে চান? (প্রতিদিনের রিপোর্টের সর্বশেষ ও নির্ভুল কপিটি অক্ষত থাকবে)')) {
       return;

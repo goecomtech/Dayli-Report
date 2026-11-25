@@ -967,6 +967,29 @@
             </div>
           </div>
 
+          <!-- GitHub Auto-Update & Version Hub (WordPress Plugin Style) -->
+          <div class="card" style="border-left: 4px solid #8b5cf6; margin-top: 16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom: 12px;">
+              <h3 class="card-title" style="margin:0;">🐙 গিটহাব অটো-আপডেট সেন্টার (WordPress-Style GitHub Updater)</h3>
+              <span id="githubVersionBadge" class="total-badge" style="background:#f3e8ff; color:#6b21a8; font-size:0.85rem; padding:6px 12px;">
+                ভার্সন v3.5
+              </span>
+            </div>
+            <p class="text-muted" style="margin-bottom: 14px;">
+              ওয়ার্ডপ্রেস প্লাগইনের মতো গিটহাব এপিআই (GitHub API)-এর মাধ্যমে যেকোনো নতুন কোড আপডেট চেক করুন এবং ১-ক্লিকে সার্ভারে লাইভ ইনস্টল করুন।
+            </p>
+
+            <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+              <button type="button" id="btnCheckGithubUpdate" class="btn btn-outline" onclick="window.lfpApp.checkGithubUpdate()">
+                🔍 নতুন আপডেট চেক করুন
+              </button>
+              <button type="button" id="btnApplyGithubUpdate" class="btn btn-primary" style="display:none;" onclick="window.lfpApp.applyGithubUpdate()">
+                🚀 ১-ক্লিকে লাইভ আপডেট ইনস্টল করুন
+              </button>
+              <span id="githubUpdateStatus" style="font-size:0.9rem; font-weight:600;"></span>
+            </div>
+          </div>
+
           <!-- Data Cleanup & Deduplication -->
           <div class="card" style="border-left: 4px solid #10b981; margin-top: 16px;">
             <h3 class="card-title" style="margin-bottom: 10px;">🧹 গুগল শিট ডুপ্লিকেট ডাটা ক্লিনার (Auto-Deduplication)</h3>
