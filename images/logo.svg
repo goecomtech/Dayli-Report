@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 220" width="100%" height="100%">
+  <defs>
+    <linearGradient id="yellowFlame" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFD200" />
+      <stop offset="100%" stop-color="#F5A623" />
+    </linearGradient>
+    <linearGradient id="greenLeaf" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#008A44" />
+      <stop offset="100%" stop-color="#005B2E" />
+    </linearGradient>
+    <linearGradient id="lightGreenLeaf" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#66BB6A" />
+      <stop offset="100%" stop-color="#388E3C" />
+    </linearGradient>
+  </defs>
+
+  <!-- Circular Emblem -->
+  <g transform="translate(190, 8) scale(0.95)">
+    <!-- Outer green ring -->
+    <circle cx="75" cy="75" r="70" fill="none" stroke="#68B659" stroke-width="4.5" />
+    
+    <!-- Central Yellow Flame / Bud -->
+    <path d="M 75 25 C 85 45, 92 62, 85 78 C 80 88, 70 88, 65 78 C 60 62, 65 45, 75 25 Z" fill="url(#yellowFlame)" />
+    
+    <!-- Left Dark Green Leaf -->
+    <path d="M 72 75 C 65 52, 40 45, 28 65 C 18 80, 22 108, 55 130 C 58 120, 68 85, 72 75 Z" fill="url(#greenLeaf)" />
+    <path d="M 35 72 C 45 88, 55 105, 55 130" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+    
+    <!-- Right Fresh Green Leaf -->
+    <path d="M 76 80 C 85 55, 110 50, 122 70 C 132 88, 124 112, 85 130 C 80 115, 78 95, 76 80 Z" fill="url(#lightGreenLeaf)" />
+    <path d="M 115 78 C 105 92, 95 108, 85 130" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+    
+    <!-- Leaf stem connector -->
+    <path d="M 70 130 C 72 138, 76 138, 78 130" fill="none" stroke="#008A44" stroke-width="3" stroke-linecap="round"/>
+  </g>
+
+  <!-- Typography: Life Free Pro -->
+  <g transform="translate(15, 140)">
+    <!-- "Life Free Pro" Brand Name -->
+    <text x="255" y="28" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="46" font-weight="900" fill="#00833E" text-anchor="middle" letter-spacing="-0.5px">
+      Life Free Pro
+    </text>
+    
+    <!-- Tagline: Revive Your Body, Refresh Your Life -->
+    <text x="255" y="58" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="17" font-weight="800" fill="#00833E" text-anchor="middle" letter-spacing="0.3px">
+      Revive Your Body, Refresh Your Life
+    </text>
+  </g>
+</svg>

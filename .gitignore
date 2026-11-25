@@ -1,0 +1,18 @@
+# Production / Server specific runtime files
+config.json
+data/
+*.sqlite
+*.sqlite3
+*.db
+*.log
+deploy.log
+
+# Operating System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Backup and temp files
+*.bak
+*.tmp
+*.temp

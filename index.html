@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Life Free Pro - দৈনিক রিপোর্টিং শীট ও ম্যানেজমেন্ট সিস্টেম</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="images/logo.svg">
+  
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/style.css?v=3.5">
+  
+  <!-- Chart.js for Admin Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- Top Notification / Google Sheet Connection Banner -->
+  <div id="connectionBanner" class="top-notice-bar" style="display: none;"></div>
+
+  <!-- Main Navigation Header -->
+  <header class="app-header">
+    <div class="container header-wrapper">
+      <a href="#" class="brand-link" onclick="location.reload()">
+        <img src="images/logo.svg" alt="Life Free Pro" class="brand-logo-img branding-logo">
+        <div>
+          <h1 class="brand-title branding-company-name">Life Free Pro</h1>
+          <p class="brand-subtitle branding-tagline">Revive Your Body, Refresh Your Life</p>
+        </div>
+      </a>
+
+      <!-- User Info & Action -->
+      <div id="headerUserBadge" class="header-user-badge" style="display: none;">
+        <span class="user-tag">
+          👤 <span id="headerUserName">সহকর্মী</span>
+          <span id="headerUserRole" class="user-role-badge">কর্মী</span>
+        </span>
+        <button id="btnBackToAdmin" class="btn btn-sm btn-outline" style="display: none;">
+          ⬅️ অ্যাডমিন প্যানেলে ফিরুন
+        </button>
+        <button id="btnLogout" class="btn btn-sm btn-danger">
+          লগআউট
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container" style="padding-top: 14px; padding-bottom: 40px;">
+
+    <!-- Navigation Tabs for Admin -->
+    <div id="adminNavTabs" class="app-tabs" style="display: none;">
+      <button class="tab-btn active" data-tab="dashboard">📊 এনালাইসিস ড্যাশবোর্ড</button>
+      <button class="tab-btn" data-tab="reports">📋 সকল দৈনিক রিপোর্ট</button>
+      <button class="tab-btn" data-tab="commissions">💰 আপসেল ও কমিশন সেটেলমেন্ট</button>
+      <button class="tab-btn" data-tab="employees">👥 সহকর্মী ব্যবস্থাপনা</button>
+      <button class="tab-btn" data-tab="attendance">⏱️ হাজিরা শিট</button>
+      <button class="tab-btn" data-tab="schedule_manager">🗓️ কাজের শিডিউল</button>
+      <button class="tab-btn" data-tab="settings">⚙️ সেটিংস ও গুগল শিট</button>
+    </div>
+
+    <!-- Navigation Tabs for Employee -->
+    <div id="employeeNavTabs" class="app-tabs" style="display: none; margin-bottom: 16px;">
+      <button class="tab-btn active" data-emp-tab="form">📝 দৈনিক রিপোর্ট ফর্ম</button>
+      <button class="tab-btn" data-emp-tab="commissions">💰 আপসেল ও কমিশন ট্র্যাকার</button>
+    </div>
+
+    <!-- ====================================================================
+         SECTION 1: THE OFFICIAL DAILY REPORT SHEET (EXACT WORD REPLICATION)
+         ==================================================================== -->
+    <section id="employeeReportSection" style="display: none;">
+      
+      <!-- Employee Date Switcher Banner -->
+      <div class="card no-print" style="padding: 10px 16px; margin-bottom: 14px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="font-bold text-primary">📝 দৈনিক কার্যবিবরণী রিপোর্ট</span>
+            <span class="text-muted" style="font-size: 0.9rem;">(প্রতিদিনের কাজ শেষে পূরণ করে সাবমিট করুন)</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <label class="font-semibold text-muted" for="historyDateSelect" style="font-size: 0.9rem;">📅 পূর্ববর্তী রিপোর্ট:</label>
+            <input type="date" id="historyDateSelect" class="form-control" style="width: auto; padding: 4px 8px;" />
+            <button class="btn btn-sm btn-outline" onclick="window.lfpApp.initEmployeeForm()">আজকের ফর্ম</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Locked Banner Notice (Visible once submitted) -->
+      <div id="reportLockBanner" class="lock-banner" style="display: none;">
+        <div>
+          🔒 <strong>আজকের রিপোর্ট ইতিমধ্যে জমা দেওয়া হয়েছে!</strong> আপনি এটি শুধুমাত্র দেখতে পারবেন, কোনো পরিবর্তন করতে পারবেন না। কোনো পরিবর্তনের প্রয়োজন হলে অ্যাডমিনের সাথে যোগাযোগ করুন।
+        </div>
+        <span class="total-badge" style="background:#10b981; color:#fff;">Status: Submitted</span>
+      </div>
+
+      <!-- The Printable Document Container -->
+      <div class="sheet-container" id="printableReportSheet">
+        
+        <!-- Header Box (Word Doc: Logo + Title + Time) -->
+        <table class="sheet-header-table">
+          <tr>
+            <td class="sheet-logo-cell">
+              <img src="images/logo.svg" alt="Life Free Pro" class="branding-logo" style="max-height: 80px;" />
+            </td>
+            <td class="sheet-title-cell">
+              <div class="sheet-main-title">দৈনিক রিপোর্টিং শীট</div>
+              <div class="sheet-en-title">DAILY REPORTING SHEET</div>
+              <div class="sheet-sub-title">
+                <span class="branding-company-name">Life Free Pro</span> • 
+                <span class="branding-office-hours">সকাল ১০:০০ – রাত ৮:০০</span>
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Meta Info Table (Word Doc: তারিখ, বার, আগমন সময়, প্রস্থান সময়, নাম, আইডি) -->
+        <table class="sheet-meta-table">
+          <tr>
+            <td class="meta-label">তারিখ</td>
+            <td class="meta-input-td">
+              <input type="date" id="reportDate" class="sheet-input font-bold" />
+            </td>
+            <td class="meta-label">বার</td>
+            <td class="meta-input-td">
+              <input type="text" id="reportDay" class="sheet-input font-bold" readonly />
+            </td>
+          </tr>
+          <tr>
+            <td class="meta-label">আগমন সময়</td>
+            <td class="meta-input-td">
+              <input type="time" id="reportArrival" class="sheet-input" />
+            </td>
+            <td class="meta-label">প্রস্থান সময়</td>
+            <td class="meta-input-td">
+              <input type="time" id="reportDeparture" class="sheet-input" />
+            </td>
+          </tr>
+          <tr>
+            <td class="meta-label">সহকর্মীর নাম</td>
+            <td class="meta-input-td">
+              <input type="text" id="reportEmpName" class="sheet-input font-bold" readonly />
+            </td>
+            <td class="meta-label">সহকর্মী আইডি</td>
+            <td class="meta-input-td">
+              <input type="text" id="reportEmpId" class="sheet-input font-bold" readonly />
+            </td>
+          </tr>
+        </table>
+
+        <!-- SECTION A: আজকের কাজের সময়সূচি (Daily Work Schedule) -->
+        <div class="sheet-section-banner">
+          <span>আজকের কাজের সময়সূচি</span>
+          <span class="en-subtitle">Daily Work Schedule</span>
+        </div>
+        <table class="sheet-data-table mobile-schedule-card-view">
+          <thead>
+            <tr>
+              <th style="width: 14%;">সময়</th>
+              <th style="width: 56%;">কাজ ও করণীয়</th>
+              <th style="width: 10%;">সম্পন্ন</th>
+              <th style="width: 20%;">মন্তব্য</th>
+            </tr>
+          </thead>
+          <tbody id="scheduleTableBody">
+            <!-- Dynamically populated from DEFAULT_SCHEDULE_ITEMS or custom employee schedule -->
+          </tbody>
+        </table>
+
+        <!-- SECTION B: সার্বক্ষণিক দায়িত্ব (All-Day Responsibilities) -->
+        <div class="sheet-section-banner">
+          <span>সার্বক্ষণিক দায়িত্ব (সারাদিন চলবে)</span>
+          <span class="en-subtitle">All-Day Responsibilities</span>
+        </div>
+        <table class="sheet-data-table">
+          <tbody>
+            <tr>
+              <td style="width: 20%; font-weight: bold; background: #f8fafc;">কুরিয়ার মনিটরিং</td>
+              <td style="width: 50%;">প্রতি ঘণ্টায় ডেলিভারি স্ট্যাটাস দেখা; কাস্টমার কল না ধরলে, ঠিকানায় সমস্যা বা রিটার্ন হলে সাথে সাথে ফলো-আপ</td>
+              <td style="width: 30%;">
+                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                  <span>সমস্যা পাওয়া:</span>
+                  <input type="number" id="respCourierFound" class="sheet-input sheet-number-input" style="width: 50px;" min="0" value="0">
+                  <span>টি, সমাধান:</span>
+                  <input type="number" id="respCourierSolved" class="sheet-input sheet-number-input" style="width: 50px;" min="0" value="0">
+                  <span>টি</span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="width: 20%; font-weight: bold; background: #f8fafc;">মেসেজ রিপ্লাই</td>
+              <td style="width: 50%;">ফেসবুক ইনবক্স, হোয়াটসঅ্যাপ ও ওয়েবসাইট চ্যাট—দেরি না করে দ্রুত রিপ্লাই</td>
+              <td style="width: 30%;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span>অরিপ্লাইড মেসেজ (দিনশেষে):</span>
+                  <input type="number" id="respUnrepliedMsg" class="sheet-input sheet-number-input" style="width: 55px;" min="0" value="0">
+                  <span>টি</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- SECTION C: দিনশেষের হিসাব (End-of-Day Report) -->
+        <div class="sheet-section-banner">
+          <span>দিনশেষের হিসাব</span>
+          <span class="en-subtitle">End-of-Day Report</span>
+        </div>
+        <table class="sheet-data-table mobile-eod-grid">
+          <tbody>
+            <tr>
+              <td class="eod-label-cell">আজ মোট কনফার্ম অর্ডার (সংখ্যা)</td>
+              <td class="eod-val-cell">
+                <input type="number" id="eodConfirmedOrders" class="sheet-input sheet-number-input font-bold" min="0" placeholder="0" />
+              </td>
+              <td class="eod-label-cell">ওয়েবসাইট অর্ডার কনফার্ম (সংখ্যা)</td>
+              <td class="eod-val-cell">
+                <input type="number" id="eodWebsiteOrders" class="sheet-input sheet-number-input" min="0" placeholder="0" />
+              </td>
+            </tr>
+            <tr>
+              <td class="eod-label-cell">কল ধরেননি / পেন্ডিং অর্ডার (সংখ্যা)</td>
+              <td class="eod-val-cell">
+                <input type="number" id="eodPendingOrders" class="sheet-input sheet-number-input" min="0" placeholder="0" />
+              </td>
+              <td class="eod-label-cell">বাতিল অর্ডার (সংখ্যা)</td>
+              <td class="eod-val-cell">
+                <input type="number" id="eodCancelledOrders" class="sheet-input sheet-number-input text-danger font-bold" min="0" placeholder="0" />
+              </td>
+            </tr>
+            <tr>
+              <td class="eod-label-cell">ডিসকাউন্ট দেওয়া অর্ডার (সংখ্যা)</td>
+              <td class="eod-val-cell">
+                <input type="number" id="eodDiscountOrders" class="sheet-input sheet-number-input" min="0" placeholder="0" />
+              </td>
+              <td class="eod-label-cell">মোট ডিসকাউন্টের পরিমাণ (৳)</td>
+              <td class="eod-val-cell">
+                <input type="number" id="eodDiscountAmount" class="sheet-input sheet-number-input" min="0" placeholder="0" />
+              </td>
+            </tr>
+            <tr>
+              <td class="eod-label-cell">পুরনো কাস্টমার ফলো-আপ (সংখ্যা)</td>
+              <td class="eod-val-cell">
+                <input type="number" id="eodOldFollowups" class="sheet-input sheet-number-input" min="0" placeholder="0" />
+              </td>
+              <td class="eod-label-cell">ফলো-আপ থেকে রিপিট অর্ডার (সংখ্যা)</td>
+              <td class="eod-val-cell">
+                <input type="number" id="eodRepeatOrders" class="sheet-input sheet-number-input" min="0" placeholder="0" />
+              </td>
+            </tr>
+            <tr>
+              <td class="eod-label-cell">ফেসবুক পোস্ট করা (সংখ্যা)</td>
+              <td class="eod-val-cell">
+                <input type="number" id="eodFbPosts" class="sheet-input sheet-number-input" min="0" placeholder="0" />
+              </td>
+              <td class="eod-label-cell">প্যাকেজিং করা (পিস)</td>
+              <td class="eod-val-cell">
+                <input type="number" id="eodPackagingPcs" class="sheet-input sheet-number-input font-bold" min="0" placeholder="0" />
+              </td>
+            </tr>
+            <tr>
+              <td class="eod-label-cell">কমিশনে সেল (পিস, পেছনের পাতা)</td>
+              <td class="eod-val-cell">
+                <input type="number" id="eodCommissionPcs" class="sheet-input sheet-number-input font-bold" min="0" placeholder="0" />
+              </td>
+              <td class="eod-label-cell">অ্যাডভান্স (জন / ৳, পেছনের পাতা)</td>
+              <td class="eod-val-cell">
+                <input type="number" id="eodAdvanceTotal" class="sheet-input sheet-number-input font-bold" min="0" placeholder="0" />
+              </td>
+            </tr>
+            <tr>
+              <td class="eod-label-cell">ওভারটাইম শুরু</td>
+              <td class="eod-val-cell">
+                <input type="time" id="eodOtStart" class="sheet-input" />
+              </td>
+              <td class="eod-label-cell">ওভারটাইম শেষ</td>
+              <td class="eod-val-cell">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <input type="time" id="eodOtEnd" class="sheet-input" />
+                  <span style="white-space: nowrap; font-size: 0.85rem;">মোট (ঘণ্টা):</span>
+                  <input type="number" id="eodOtHours" class="sheet-input sheet-number-input" style="width: 50px;" step="0.5" placeholder="0" />
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td class="eod-label-cell">আজকের সমস্যা / মন্তব্য</td>
+              <td colspan="3">
+                <textarea id="eodEmployeeRemarks" class="sheet-input" rows="2" placeholder="আজকের কোনো সমস্যা, সুপারিশ বা বিশেষ মন্তব্য থাকলে লিখুন..."></textarea>
+              </td>
+            </tr>
+            <tr>
+              <td class="eod-label-cell">অ্যাডমিন / সুপারভাইজার মন্তব্য</td>
+              <td colspan="3">
+                <input type="text" id="eodSupervisorRemarks" class="sheet-input" placeholder="দায়িত্বপ্রাপ্ত ব্যক্তির পর্যবেক্ষণ বা মূল্যায়ন..." />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Signatures Table -->
+        <table class="sheet-data-table" style="margin-bottom: 24px;">
+          <tr>
+            <td style="width: 50%; vertical-align: top; background: #fdfdfd;">
+              <div class="signature-box">
+                <div id="empSignatureDisplay"></div>
+                <div class="signature-line">সহকর্মীর স্বাক্ষর</div>
+              </div>
+            </td>
+            <td style="width: 50%; vertical-align: top; background: #fdfdfd;">
+              <div class="signature-box">
+                <div id="supervisorSignatureDisplay"></div>
+                <div class="signature-line">দায়িত্বপ্রাপ্ত / অনুমোদনকারীর স্বাক্ষর</div>
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <!-- ==================================================================
+             SECTION D: কমিশন ও অ্যাডভান্স রেকর্ড (Commission & Advance Record)
+             ================================================================== -->
+        <div style="page-break-before: always; margin-top: 24px;">
+          <div class="sheet-section-banner">
+            <span>কমিশন ও অ্যাডভান্স রেকর্ড</span>
+            <span class="en-subtitle">Commission & Advance Record</span>
+          </div>
+
+          <!-- Sub-section: কমিশনে সেল (অতিরিক্ত বিক্রি) -->
+          <div style="background: #e2e8f0; padding: 6px 12px; font-weight: 700; border: 1.5px solid var(--sheet-border); border-bottom: none; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <span>কমিশনে সেল (অতিরিক্ত বিক্রি) | Commission Sales</span>
+            <button type="button" id="btnAddCommRow" class="btn btn-sm btn-primary no-print">➕ নতুন সারি যোগ করুন</button>
+          </div>
+          <div class="sheet-table-scroll-wrap">
+            <table class="sheet-data-table">
+              <thead>
+                <tr>
+                  <th style="width: 6%;">সিরিয়াল</th>
+                  <th style="width: 28%;">কাস্টমারের ফোন নাম্বার</th>
+                  <th style="width: 16%;">কত পিস</th>
+                  <th style="width: 20%;">সোর্স</th>
+                  <th style="width: 22%;">নোট</th>
+                  <th style="width: 8%;" class="no-print">অ্যাকশন</th>
+                </tr>
+              </thead>
+              <tbody id="commissionTableBody">
+                <!-- Dynamically populated rows with delete option -->
+              </tbody>
+              <tfoot>
+                <tr class="total-row">
+                  <td colspan="2" class="text-left font-bold" style="padding-left: 12px;">
+                    সর্বমোট কাস্টমার (জন): <span id="commTotalCustomers" class="total-badge">0</span>
+                  </td>
+                  <td colspan="4" class="text-left font-bold">
+                    মোট পিস: <span id="commTotalPcs" class="total-badge">0</span>
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <!-- Sub-section: কাস্টমার অ্যাডভান্স রেকর্ড -->
+          <div style="background: #e2e8f0; padding: 6px 12px; font-weight: 700; border: 1.5px solid var(--sheet-border); border-bottom: none; display: flex; justify-content: space-between; align-items: center; margin-top: 14px; flex-wrap: wrap; gap: 8px;">
+            <span>কাস্টমার অ্যাডভান্স রেকর্ড | Customer Advance</span>
+            <button type="button" id="btnAddAdvRow" class="btn btn-sm btn-primary no-print">➕ নতুন সারি যোগ করুন</button>
+          </div>
+          <div class="sheet-table-scroll-wrap">
+            <table class="sheet-data-table">
+              <thead>
+                <tr>
+                  <th style="width: 6%;">সিরিয়াল</th>
+                  <th style="width: 26%;">কাস্টমারের ফোন নাম্বার</th>
+                  <th style="width: 26%;">পেমেন্ট ফোন নাম্বার / অ্যাকাউন্ট</th>
+                  <th style="width: 16%;">অ্যাডভান্স (৳)</th>
+                  <th style="width: 18%;">নোট</th>
+                  <th style="width: 8%;" class="no-print">অ্যাকশন</th>
+                </tr>
+              </thead>
+              <tbody id="advanceTableBody">
+                <!-- Dynamically populated rows with delete option -->
+              </tbody>
+              <tfoot>
+                <tr class="total-row">
+                  <td colspan="2" class="text-left font-bold" style="padding-left: 12px;">
+                    সর্বমোট কাস্টমার (জন): <span id="advTotalCustomers" class="total-badge">0</span>
+                  </td>
+                  <td colspan="4" class="text-left font-bold">
+                    মোট টাকা (৳): <span id="advTotalAmount" class="total-badge">0</span>
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <!-- Signature Pad Section (For drawing digital signature) -->
+          <div class="card no-print" style="margin-top: 16px; border: 1.5px solid var(--border-color);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+              <span class="font-bold text-primary">✍️ ডিজিটাল স্বাক্ষর দিন:</span>
+              <button type="button" id="btnClearSignature" class="btn btn-sm btn-outline">স্বাক্ষর মুছুন</button>
+            </div>
+            <canvas id="signatureCanvas"></canvas>
+            <small class="text-muted">মাউস অথবা মোবাইলের টাচস্ক্রিন দিয়ে উপরের বক্সে আপনার স্বাক্ষর আঁকুন।</small>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Sticky Floating Action Bar for Employee / Admin -->
+      <div class="sheet-submit-bar no-print">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <span id="autoSaveIndicator" class="autosave-badge autosave-saved">
+            ✅ সংরক্ষিত
+          </span>
+          <button type="button" id="btnPrintReport" class="btn btn-outline btn-sm">
+            🖨️ প্রিন্ট / PDF
+          </button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <button type="button" id="btnSaveDraftManual" class="btn btn-outline">
+            💾 ড্রাফট সেভ
+          </button>
+          <button type="button" id="btnSubmitReport" class="btn btn-primary btn-lg">
+            ✅ আজকের চূড়ান্ত রিপোর্ট সাবমিট করুন
+          </button>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ====================================================================
+         SECTION 1.5: EMPLOYEE UPSELL & COMMISSION PARCEL TRACKER
+         ==================================================================== -->
+    <section id="employeeCommissionSection" style="display: none;">
+      <div class="card">
+        <div class="card-header" style="flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h2 class="card-title">💰 আমার আপসেল ও ক্রস-সেল কমিশন ট্র্যাকার</h2>
+            <p class="text-muted" style="margin: 4px 0 0 0; font-size: 0.9rem;">আপনার বিক্রি করা পার্সেলগুলোর ডেলিভারি স্ট্যাটাস ট্র্যাক করুন ও অর্জিত কমিশনের হিসাব রাখুন</p>
+          </div>
+          <button type="button" class="btn btn-primary" onclick="window.lfpApp.openAddCommissionModal()">
+            ➕ নতুন আপসেল পার্সেল যোগ করুন
+          </button>
+        </div>
+
+        <!-- Metric summary stats for employee -->
+        <div class="analytics-grid" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); margin-bottom: 20px;">
+          <div class="metric-card">
+            <h4>মোট পার্সেল</h4>
+            <div class="metric-val" id="empCommTotalParcels">0</div>
+          </div>
+          <div class="metric-card" style="border-left: 4px solid #3b82f6;">
+            <h4>প্রসেসিং</h4>
+            <div class="metric-val" id="empCommProcessing">0</div>
+          </div>
+          <div class="metric-card" style="border-left: 4px solid #10b981;">
+            <h4>ডেলিভার্ড</h4>
+            <div class="metric-val text-success font-bold" id="empCommDelivered">0</div>
+          </div>
+          <div class="metric-card" style="border-left: 4px solid #f59e0b;">
+            <h4>পার্শিয়াল ডেলিভারি</h4>
+            <div class="metric-val" style="color: #d97706;" id="empCommPartial">0</div>
+          </div>
+          <div class="metric-card" style="border-left: 4px solid #ef4444;">
+            <h4>ক্যানসেলড</h4>
+            <div class="metric-val text-danger" id="empCommCancelled">0</div>
+          </div>
+          <div class="metric-card" style="border-left: 4px solid #059669; background: #ecfdf5;">
+            <h4>পরিশোধিত কমিশন</h4>
+            <div class="metric-val text-success font-bold" id="empCommPaidAmount">৳ 0</div>
+          </div>
+          <div class="metric-card" style="border-left: 4px solid #d97706; background: #fffbeb;">
+            <h4>বকেয়া কমিশন</h4>
+            <div class="metric-val font-bold" style="color:#b45309;" id="empCommUnpaidAmount">৳ 0</div>
+          </div>
+        </div>
+
+        <!-- Filter and Search controls -->
+        <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+            <div style="flex: 1; min-width: 220px;">
+              <input type="text" id="empCommSearchInput" class="form-control" placeholder="🔍 কাস্টমার ফোন বা প্রোডাক্ট দিয়ে খুঁজুন..." />
+            </div>
+            <div style="min-width: 140px;">
+              <input type="month" id="empCommMonthFilter" class="form-control" />
+            </div>
+            <div style="min-width: 150px;">
+              <select id="empCommStatusFilter" class="form-control">
+                <option value="all">সকল ডেলিভারি স্ট্যাটাস</option>
+                <option value="Processing">প্রসেসিং (Processing)</option>
+                <option value="Delivered">ডেলিভার্ড (Delivered)</option>
+                <option value="Partial">পার্শিয়াল (Partial)</option>
+                <option value="Cancelled">ক্যানসেলড (Cancelled)</option>
+              </select>
+            </div>
+            <div style="min-width: 140px;">
+              <select id="empCommPayoutFilter" class="form-control">
+                <option value="all">সকল পেমেন্ট স্ট্যাটাস</option>
+                <option value="Unpaid">বকেয়া (Unpaid)</option>
+                <option value="Paid">পরিশোধিত (Paid)</option>
+              </select>
+            </div>
+            <button type="button" class="btn btn-outline" onclick="window.lfpApp.loadEmployeeCommissions()">ফিল্টার রিফ্রেশ</button>
+          </div>
+        </div>
+
+        <!-- Commissions Table -->
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 10%;">তারিখ</th>
+                <th style="width: 14%;">কাস্টমার ফোন</th>
+                <th style="width: 16%;">প্রোডাক্ট / বিবরণ</th>
+                <th style="width: 8%;">পিস</th>
+                <th style="width: 10%;">কমিশন (৳)</th>
+                <th style="width: 20%;">ডেলিভারি স্ট্যাটাস পরিবর্তন</th>
+                <th style="width: 12%;">পার্শিয়াল টাকা (৳)</th>
+                <th style="width: 10%;">পেমেন্ট স্ট্যাটাস</th>
+              </tr>
+            </thead>
+            <tbody id="empCommTableBody">
+              <tr><td colspan="8" class="text-center">লোড হচ্ছে...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 2: ADMIN CONTROL CENTER & ANALYTICS PANELS
+         ==================================================================== -->
+    <section id="adminPanelSection" style="display: none;">
+      
+      <!-- VIEW 1: DASHBOARD ANALYTICS -->
+      <div id="adminView_dashboard">
+        <div class="card-header" style="border:none; padding:0 0 16px 0;">
+          <div>
+            <h2 class="card-title">📊 ব্যবসায়িক পারফরম্যান্স ও রিপোর্ট এনালাইসিস</h2>
+            <p class="text-muted">প্রতিদিনের সেলস, অর্ডার ডেলিভারি, বাতিল অনুপাত এবং ওভারটাইম হিসাব</p>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="window.lfpApp.loadAdminDashboard()">
+            🔄 রিফ্রেশ করুন
+          </button>
+        </div>
+
+        <!-- Metric KPI Cards -->
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-icon-box" style="background:#e0f2fe; color:#0284c7;">📝</div>
+            <div class="metric-info">
+              <h4>আজকের জমা রিপোর্ট</h4>
+              <div class="metric-val" id="dashTodayReports">0</div>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon-box" style="background:#dcfce7; color:#16a34a;">✅</div>
+            <div class="metric-info">
+              <h4>আজকের কনফার্ম অর্ডার</h4>
+              <div class="metric-val" id="dashConfirmedOrders">0</div>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon-box" style="background:#fef3c7; color:#d97706;">📦</div>
+            <div class="metric-info">
+              <h4>প্যাকেজিং (পিস)</h4>
+              <div class="metric-val" id="dashPackagingPcs">0</div>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon-box" style="background:#f3e8ff; color:#9333ea;">🌟</div>
+            <div class="metric-info">
+              <h4>কমিশন সেলস</h4>
+              <div class="metric-val" id="dashSalesPieces">0</div>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon-box" style="background:#ecfdf5; color:#059669;">💰</div>
+            <div class="metric-info">
+              <h4>মোট অ্যাডভান্স</h4>
+              <div class="metric-val" id="dashAdvanceAmount">৳ 0</div>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon-box" style="background:#fff1f2; color:#e11d48;">⏱️</div>
+            <div class="metric-info">
+              <h4>মোট ওভারটাইম</h4>
+              <div class="metric-val" id="dashOvertimeHours">0 ঘঃ</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Averages & Ratios Banner -->
+        <div class="card" style="background:#f8fafc; border-left: 4px solid var(--primary);">
+          <div style="display:flex; justify-content:space-around; flex-wrap:wrap; gap:16px;">
+            <div class="text-center">
+              <span class="text-muted font-semibold">গড় অর্ডার (প্রতি কর্মী / দিন):</span>
+              <div class="font-bold text-primary" style="font-size:1.4rem;" id="dashAvgOrders">0</div>
+            </div>
+            <div class="text-center">
+              <span class="text-muted font-semibold">অর্ডার বাতিল অনুপাত (Cancellation Rate):</span>
+              <div class="font-bold text-danger" style="font-size:1.4rem;" id="dashCancelRatio">0%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Visual Charts Grid -->
+        <div class="form-row" style="margin-top: 20px;">
+          <div class="card">
+            <h3 class="card-title" style="font-size:1.1rem; margin-bottom:12px;">📊 আজকের অর্ডার ফলাফল ব্রেকডাউন</h3>
+            <div style="height: 280px; position: relative;">
+              <canvas id="ordersChart"></canvas>
+            </div>
+          </div>
+          <div class="card">
+            <h3 class="card-title" style="font-size:1.1rem; margin-bottom:12px;">📈 গত ৭ দিনের সেলস ও ক্যানসেলেশন ট্রেন্ড</h3>
+            <div style="height: 280px; position: relative;">
+              <canvas id="trendChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 2: ALL REPORTS (INSPECTOR & EDITOR) -->
+      <div id="adminView_reports" style="display: none;">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">📋 সকল সহকর্মীর দৈনিক রিপোর্ট সমূহ</h2>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <select id="filterReportEmployee" class="form-control" style="width: auto;">
+                <option value="all">সকল সহকর্মী</option>
+              </select>
+              <input type="date" id="filterReportStartDate" class="form-control" style="width: auto;" />
+              <input type="date" id="filterReportEndDate" class="form-control" style="width: auto;" />
+              <button class="btn btn-primary btn-sm" onclick="window.lfpApp.loadAdminReports()">🔍 ফিল্টার করুন</button>
+            </div>
+          </div>
+          <div style="overflow-x: auto;">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>তারিখ</th>
+                  <th>সহকর্মী</th>
+                  <th>সময়সূচি</th>
+                  <th>কনফার্ম অর্ডার</th>
+                  <th>বাতিল</th>
+                  <th>প্যাকেজিং</th>
+                  <th>অ্যাডভান্স</th>
+                  <th>অ্যাকশন</th>
+                </tr>
+              </thead>
+              <tbody id="adminReportsTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 2.5: COMMISSIONS & SETTLEMENT MANAGER -->
+      <div id="adminView_commissions" style="display: none;">
+        <div class="card">
+          <div class="card-header" style="flex-wrap: wrap; gap: 12px;">
+            <div>
+              <h2 class="card-title">💰 আপসেল পার্সেল ও কমিশন সেটেলমেন্ট</h2>
+              <p class="text-muted" style="margin: 4px 0 0 0; font-size: 0.9rem;">সকল সহকর্মীর আপসেল পার্সেল ট্র্যাক করুন এবং কমিশন পরিশোধ (Paid) সম্পন্ন করুন</p>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <button type="button" class="btn btn-success" id="btnAdminBulkPayout" onclick="window.lfpApp.adminBulkPayoutSelected()">
+                💸 নির্বাচিত পার্সেলগুলো পেইড মার্ক করুন
+              </button>
+            </div>
+          </div>
+
+          <!-- Admin Analytics Cards -->
+          <div class="analytics-grid" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); margin-bottom: 20px;">
+            <div class="metric-card">
+              <h4>মোট আপসেল পার্সেল</h4>
+              <div class="metric-val" id="adminCommTotalParcels">0</div>
+            </div>
+            <div class="metric-card" style="border-left: 4px solid #3b82f6;">
+              <h4>প্রসেসিং</h4>
+              <div class="metric-val" id="adminCommProcessing">0</div>
+            </div>
+            <div class="metric-card" style="border-left: 4px solid #10b981;">
+              <h4>সফল ডেলিভারি</h4>
+              <div class="metric-val text-success font-bold" id="adminCommDelivered">0</div>
+            </div>
+            <div class="metric-card" style="border-left: 4px solid #f59e0b;">
+              <h4>পার্শিয়াল ডেলিভারি</h4>
+              <div class="metric-val" style="color: #d97706;" id="adminCommPartial">0</div>
+            </div>
+            <div class="metric-card" style="border-left: 4px solid #ef4444;">
+              <h4>ক্যানসেলড</h4>
+              <div class="metric-val text-danger" id="adminCommCancelled">0</div>
+            </div>
+            <div class="metric-card" style="border-left: 4px solid #059669; background: #ecfdf5;">
+              <h4>মোট পরিশোধিত কমিশন</h4>
+              <div class="metric-val text-success font-bold" id="adminCommTotalPaid">৳ 0</div>
+            </div>
+            <div class="metric-card" style="border-left: 4px solid #d97706; background: #fffbeb;">
+              <h4>বকেয়া পরিশোধযোগ্য</h4>
+              <div class="metric-val font-bold" style="color:#b45309;" id="adminCommTotalUnpaid">৳ 0</div>
+            </div>
+          </div>
+
+          <!-- Filters -->
+          <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+              <div style="min-width: 160px;">
+                <select id="adminCommEmpSelect" class="form-control">
+                  <option value="all">সকল সহকর্মী</option>
+                </select>
+              </div>
+              <div style="flex: 1; min-width: 200px;">
+                <input type="text" id="adminCommSearchInput" class="form-control" placeholder="🔍 কাস্টমার ফোন, প্রোডাক্ট বা নাম..." />
+              </div>
+              <div style="min-width: 130px;">
+                <input type="month" id="adminCommMonthFilter" class="form-control" />
+              </div>
+              <div style="min-width: 130px;">
+                <select id="adminCommStatusFilter" class="form-control">
+                  <option value="all">সকল ডেলিভারি</option>
+                  <option value="Processing">প্রসেসিং</option>
+                  <option value="Delivered">ডেলিভার্ড</option>
+                  <option value="Partial">পার্শিয়াল</option>
+                  <option value="Cancelled">ক্যানসেলড</option>
+                </select>
+              </div>
+              <div style="min-width: 130px;">
+                <select id="adminCommPayoutFilter" class="form-control">
+                  <option value="all">সকল পেমেন্ট</option>
+                  <option value="Unpaid">বকেয়া (Unpaid)</option>
+                  <option value="Paid">পরিশোধিত (Paid)</option>
+                </select>
+              </div>
+              <button type="button" class="btn btn-outline" onclick="window.lfpApp.loadAdminCommissions()">ফিল্টার প্রয়োগ</button>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width: 4%;"><input type="checkbox" id="adminCommSelectAll" onchange="window.lfpApp.toggleAdminCommSelectAll(this)" /></th>
+                  <th style="width: 10%;">তারিখ</th>
+                  <th style="width: 13%;">সহকর্মী</th>
+                  <th style="width: 12%;">কাস্টমার ফোন</th>
+                  <th style="width: 13%;">প্রোডাক্ট</th>
+                  <th style="width: 6%;">পিস</th>
+                  <th style="width: 8%;">কমিশন (৳)</th>
+                  <th style="width: 12%;">ডেলিভারি স্ট্যাটাস</th>
+                  <th style="width: 10%;">পার্শিয়াল টাকা</th>
+                  <th style="width: 12%;">কমিশন পরিশোধ অ্যাকশন</th>
+                </tr>
+              </thead>
+              <tbody id="adminCommTableBody">
+                <tr><td colspan="10" class="text-center">লোড হচ্ছে...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 3: EMPLOYEES MANAGEMENT -->
+      <div id="adminView_employees" style="display: none;">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">👥 সহকর্মী ও ইউজার ব্যবস্থাপনা</h2>
+              <p class="text-muted">নতুন সহকর্মী রেজিস্ট্রেশন, পাসওয়ার্ড পরিবর্তন এবং সক্রিয়/নিষ্ক্রিয় নিয়ন্ত্রণ</p>
+            </div>
+            <button class="btn btn-primary" onclick="window.lfpApp.openAddEmployeeModal()">
+              + নতুন সহকর্মী যোগ করুন
+            </button>
+          </div>
+          <div style="overflow-x: auto;">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>আইডি</th>
+                  <th>নাম ও পদবী</th>
+                  <th>ফোন নাম্বার</th>
+                  <th>পাসওয়ার্ড</th>
+                  <th>রোল</th>
+                  <th>স্ট্যাটাস</th>
+                  <th>অ্যাকশন</th>
+                </tr>
+              </thead>
+              <tbody id="employeeListTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 4: ATTENDANCE SHEET -->
+      <div id="adminView_attendance" style="display: none;">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">⏱️ সহকর্মীদের হাজিরা ও সময়সূচি খাতা</h2>
+              <p class="text-muted">প্রতিদিনের আগমন, প্রস্থান, লেট ও ওভারটাইম হিসাব</p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <input type="month" id="attendanceMonthFilter" class="form-control" style="width: auto;" />
+              <button class="btn btn-primary btn-sm" onclick="window.lfpApp.loadAdminAttendance()">দেখুন</button>
+            </div>
+          </div>
+          <div style="overflow-x: auto;">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>তারিখ</th>
+                  <th>সহকর্মী</th>
+                  <th>আগমন সময়</th>
+                  <th>প্রস্থান সময়</th>
+                  <th>হাজিরা স্ট্যাটাস</th>
+                  <th>ওভারটাইম</th>
+                  <th>মন্তব্য</th>
+                </tr>
+              </thead>
+              <tbody id="attendanceTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 6: SCHEDULE MANAGER (Customize tasks per employee) -->
+      <div id="adminView_schedule_manager" style="display: none;">
+        <div class="card">
+          <div class="card-header" style="flex-wrap: wrap; gap: 12px;">
+            <div>
+              <h2 class="card-title">🗓️ সহকর্মীদের কাজের সময়সূচি ও রুটিন ব্যবস্থাপনা</h2>
+              <p class="text-muted">নির্দিষ্ট সহকর্মীর কাজের ধাপ, সময় পরিবর্তন, নতুন কাজ যোগ ও গুগল শিটে সংরক্ষণ করুন</p>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+              <label class="font-bold" for="schedTargetEmployee">সহকর্মী বেছে নিন:</label>
+              <select id="schedTargetEmployee" class="form-control" style="width: auto; min-width: 220px;">
+                <option value="">সহকর্মী লোড হচ্ছে...</option>
+              </select>
+              <button type="button" class="btn btn-outline btn-sm" onclick="window.lfpApp.resetScheduleEditorToDefault()">
+                🔄 ডিফল্ট রুটিনে রিসেট
+              </button>
+              <button type="button" id="btnSaveSchedule" class="btn btn-primary btn-sm" onclick="window.lfpApp.saveCustomSchedule()">
+                💾 এই কর্মীর শিডিউল সংরক্ষণ করুন
+              </button>
+            </div>
+          </div>
+
+          <!-- Schedule task editor items list -->
+          <div id="schedEditorList" style="margin-top: 14px; min-height: 120px;">
+            <p class="text-center text-muted" style="padding: 24px;">লোড হচ্ছে...</p>
+          </div>
+
+          <div style="margin-top: 16px; text-align: center;">
+            <button type="button" class="btn btn-outline" onclick="window.lfpApp.addScheduleEditorRow()">
+              ➕ নতুন কাজের ধাপ যোগ করুন
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 5: SYSTEM & GOOGLE SHEET SETTINGS -->
+      <div id="adminView_settings" style="display: none;">
+        <div class="form-row">
+          
+          <!-- Branding Customization -->
+          <div class="card">
+            <h3 class="card-title" style="margin-bottom: 16px;">🎨 ব্র্যান্ডিং ও কাস্টমাইজেশন</h3>
+            <div class="form-group">
+              <label class="form-label">প্রতিষ্ঠানের নাম:</label>
+              <input type="text" id="setCompanyName" class="form-control" value="Life Free Pro" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">স্লোগান / ট্যাগলাইন:</label>
+              <input type="text" id="setTagline" class="form-control" value="Revive Your Body, Refresh Your Life" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">অফিস সময়সূচি বিবরণ:</label>
+              <input type="text" id="setOfficeHours" class="form-control" value="সকাল ১০:০০ – রাত ৮:০০" />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">থিম কালার (Primary):</label>
+                <input type="color" id="setPrimaryColor" class="form-control" style="height:42px; padding:2px;" value="#007A3D" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">সেকেন্ডারি কালার:</label>
+                <input type="color" id="setSecondaryColor" class="form-control" style="height:42px; padding:2px;" value="#2e7d32" />
+              </div>
+            </div>
+
+            <!-- Logo Upload to Google Drive -->
+            <div class="form-group" style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-color);">
+              <label class="form-label font-bold">🏢 প্রতিষ্ঠানের লোগো আপলোড (গুগল ড্রাইভে সেভ হবে):</label>
+              <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+                <div style="width: 80px; height: 80px; border: 1.5px dashed var(--sheet-border); border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #f8fafc; overflow: hidden; padding: 4px;">
+                  <img id="setLogoPreview" src="images/logo.svg" alt="Logo Preview" style="max-height: 100%; max-width: 100%; object-fit: contain;" />
+                </div>
+                <div style="flex: 1; min-width: 200px;">
+                  <input type="file" id="inputLogoFile" accept="image/png, image/jpeg, image/jpg, image/webp, image/svg+xml" class="form-control" style="padding: 6px;" />
+                  <small class="text-muted" style="display: block; margin-top: 4px;">
+                    পিএনজি, জেপিজি বা ওয়েবপি ফাইল সিলেক্ট করুন। ফাইলটি সরাসরি আপনার <strong>গুগল ড্রাইভে</strong> সেভ হবে এবং সব পেজে আপডেট হবে।
+                  </small>
+                </div>
+              </div>
+              <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
+                <button type="button" id="btnUploadLogo" class="btn btn-sm btn-primary" onclick="window.lfpApp.uploadBusinessLogo()">
+                  ☁️ গুগল ড্রাইভে লোগো আপলোড করুন
+                </button>
+                <button type="button" class="btn btn-sm btn-outline" onclick="window.lfpApp.resetLogoToDefault()">
+                  🔄 ডিফল্ট লোগোতে রিসেট
+                </button>
+              </div>
+              <div id="logoUploadStatus" style="font-size: 0.88rem; margin-top: 8px; font-weight: 600;"></div>
+            </div>
+          </div>
+
+          <!-- Google Sheet Connection Configuration -->
+          <div class="card">
+            <h3 class="card-title" style="margin-bottom: 16px;">🔗 গুগল শিট কানেকশন সেটিংস</h3>
+            <p class="text-muted" style="margin-bottom: 14px;">
+              আপনার গুগল শিটের Apps Script Web App URL টি এখানে বসিয়ে দিন। ডাটা সরাসরি গুগল শিটে সেভ হবে।
+            </p>
+            <div class="form-group">
+              <label class="form-label">গুগল স্ক্রিপ্ট Web App URL:</label>
+              <input type="url" id="setGasUrl" class="form-control" placeholder="https://script.google.com/macros/s/AKfycb.../exec" />
+            </div>
+            <div class="form-group">
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="setUseProxy" />
+                <span>হোস্টিং প্রক্সি ব্যবহার করুন (api.php) — শেয়ার্ড হোস্টিংয়ে CORS সমস্যা এড়াতে প্রযোজ্য</span>
+              </label>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+              <a href="setup.html" target="_blank" class="btn btn-outline">
+                🛠️ সেটআপ গাইড ও উইজার্ড
+              </a>
+              <button type="button" class="btn btn-primary" onclick="window.lfpApp.saveAdminSettings()">
+                💾 সেটিংস সংরক্ষণ করুন
+              </button>
+            </div>
+          </div>
+
+          <!-- Local Database & Google Sheets Dual-Sync Hub -->
+          <div class="card" style="border-left: 4px solid #2563eb; margin-top: 16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom: 12px;">
+              <h3 class="card-title" style="margin:0;">⚡ লোকাল ডেটাবেস ও গুগল শিট ডুয়াল-সিঙ্ক (Hybrid Sync Hub)</h3>
+              <span id="dbLiveStatusBadge" class="total-badge" style="background:#dbeafe; color:#1e40af; font-size:0.85rem; padding:6px 12px;">
+                লোকাল ডেটাবেস লোড হচ্ছে...
+              </span>
+            </div>
+            <p class="text-muted" style="margin-bottom: 14px;">
+              কর্মীদের কাজের গতি নিশ্চিত করতে ডেটা সরাসরি VPS-এর লোকাল ডেটাবেস থেকে চোখের পলকে লোড ও সেভ হয় এবং ব্যাকগ্রাউন্ডে গুগল শিটে স্বয়ংক্রিয়ভাবে সিঙ্ক হয়।
+            </p>
+
+            <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+              <button type="button" id="btnSyncNow" class="btn btn-primary" onclick="window.lfpApp.triggerSyncNow()">
+                🔄 গুগল শিটে এখনই সিঙ্ক করুন (Push Pending)
+              </button>
+              <button type="button" id="btnPullFromGoogle" class="btn btn-outline" onclick="window.lfpApp.pullAllFromGoogle()">
+                📥 গুগল শিট থেকে সকল ডেটা আনুন (Pull from Google)
+              </button>
+              <span id="syncActionStatus" style="font-size:0.9rem; font-weight:600;"></span>
+            </div>
+          </div>
+
+          <!-- Data Cleanup & Deduplication -->
+          <div class="card" style="border-left: 4px solid #10b981; margin-top: 16px;">
+            <h3 class="card-title" style="margin-bottom: 10px;">🧹 গুগল শিট ডুপ্লিকেট ডাটা ক্লিনার (Auto-Deduplication)</h3>
+            <p class="text-muted" style="margin-bottom: 14px;">
+              অটো-সেভ বা একাধিকবার সেভ করার ফলে শিটে কোনো অতিরিক্ত ডুপ্লিকেট সারি জমে থাকলে, এই বাটনে চাপ দিয়ে ১ ক্লিকে সমস্ত শিট পরিচ্ছন্ন করে ফেলুন। প্রতিদিনের সর্বশেষ ও নির্ভুল তথ্যটি অক্ষত রেখে বাকি সব পুরোনো ডুপ্লিকেট সারি স্বয়ংক্রিয়ভাবে মুছে যাবে।
+            </p>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+              <button type="button" id="btnRunDeduplication" class="btn btn-primary" onclick="window.lfpApp.runDeduplication()">
+                🧹 সমস্ত শিটের ডুপ্লিকেট ডাটা মুছে পরিষ্কার করুন
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ====================================================================
+       LOGIN MODAL
+       ==================================================================== -->
+  <div id="loginModal" class="modal-overlay">
+    <div class="auth-card">
+      <div class="auth-header">
+        <img src="images/logo.svg" alt="Life Free Pro" class="auth-logo branding-logo" />
+        <h2 class="branding-company-name" style="color:var(--primary); font-size:1.4rem;">Life Free Pro</h2>
+        <p class="text-muted">দৈনিক রিপোর্টিং ও ম্যানেজমেন্ট পোর্টাল</p>
+      </div>
+      <div class="auth-body">
+        <div id="loginErrorNotice" style="display:none; background:#fee2e2; border:1px solid #f87171; color:#991b1b; padding:10px; border-radius:6px; margin-bottom:14px; font-size:0.9rem;"></div>
+
+        <form id="loginForm">
+          <div class="form-group">
+            <label class="form-label">ফোন নাম্বার বা ইমেইল বা আইডি:</label>
+            <input type="text" id="loginIdentifier" class="form-control" placeholder="017xxxxxxxx বা admin@..." required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">পাসওয়ার্ড:</label>
+            <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required />
+          </div>
+          <button type="submit" id="btnLoginSubmit" class="btn btn-primary" style="width:100%; padding:10px; font-size:1.05rem;">
+            লগইন করুন
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       ADD / EDIT EMPLOYEE MODAL
+       ==================================================================== -->
+  <div id="employeeModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title" id="empModalTitle">সহকর্মী তথ্য</h3>
+        <button class="modal-close" onclick="document.getElementById('employeeModal').classList.remove('active')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="modalEmpId" />
+        <div class="form-group">
+          <label class="form-label">সহকর্মীর পুরো নাম *</label>
+          <input type="text" id="modalEmpName" class="form-control" placeholder="যেমন: মোঃ কামরুল হাসান" required />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">ফোন নাম্বার *</label>
+            <input type="tel" id="modalEmpPhone" class="form-control" placeholder="018xxxxxxxx" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">ইমেইল ঠিকানা</label>
+            <input type="email" id="modalEmpEmail" class="form-control" placeholder="name@lifefreepro.com" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">লগইন পাসওয়ার্ড *</label>
+            <input type="text" id="modalEmpPass" class="form-control" placeholder="পাসওয়ার্ড দিন" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">রোল (Role) *</label>
+            <select id="modalEmpRole" class="form-control">
+              <option value="employee">সহকর্মী (Employee)</option>
+              <option value="admin">অ্যাডমিন (Admin)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">পদবী (Designation)</label>
+            <input type="text" id="modalEmpDesignation" class="form-control" placeholder="সেলস অ্যান্ড সাপোর্ট" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">স্ট্যাটাস</label>
+            <select id="modalEmpStatus" class="form-control">
+              <option value="active">সক্রিয় (Active)</option>
+              <option value="inactive">নিষ্ক্রিয় (Inactive)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="document.getElementById('employeeModal').classList.remove('active')">বাতিল</button>
+        <button class="btn btn-primary" onclick="window.lfpApp.saveEmployeeFromModal()">সংরক্ষণ করুন</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       ADD / EDIT UPSELL COMMISSION PARCEL MODAL
+       ==================================================================== -->
+  <div id="modalAddCommission" class="modal-overlay">
+    <div class="modal-box" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="commModalTitle">➕ নতুন আপসেল পার্সেল এন্ট্রি</h3>
+        <button class="modal-close" onclick="document.getElementById('modalAddCommission').classList.remove('active')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="modalCommId" />
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">তারিখ *</label>
+            <input type="date" id="modalCommDate" class="form-control" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">কাস্টমার ফোন নাম্বার *</label>
+            <input type="tel" id="modalCommPhone" class="form-control" placeholder="017xxxxxxxx" required />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">প্রোডাক্ট / আইটেম বিবরণ *</label>
+            <input type="text" id="modalCommProduct" class="form-control" placeholder="যেমন: অর্গানিক টি বা ভিটামিন সি" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">পিস (Pieces) *</label>
+            <input type="number" id="modalCommPieces" class="form-control" min="1" value="1" required />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">কমিশন টাকা (৳)</label>
+            <input type="number" id="modalCommAmount" class="form-control" min="0" placeholder="0" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">ডেলিভারি স্ট্যাটাস *</label>
+            <select id="modalCommDeliveryStatus" class="form-control" onchange="window.lfpApp.onModalCommStatusChange(this.value)">
+              <option value="Processing">প্রসেসিং (Processing)</option>
+              <option value="Delivered">ডেলিভার্ড (Delivered)</option>
+              <option value="Partial">পার্শিয়াল ডেলিভারি (Partial)</option>
+              <option value="Cancelled">ক্যানসেলড (Cancelled)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" id="modalCommPartialWrap" style="display: none;">
+          <label class="form-label font-bold" style="color: #d97706;">পার্শিয়াল কালেকশন / প্রাপ্ত টাকা (৳) *</label>
+          <input type="number" id="modalCommPartialAmount" class="form-control" min="0" placeholder="কয় টাকা পার্শিয়াল হয়েছে তা লিখুন" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">অতিরিক্ত নোট / কুরিয়ার ট্র্যাকিং</label>
+          <input type="text" id="modalCommNotes" class="form-control" placeholder="কুরিয়ার নোট বা বিবরণ..." />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="document.getElementById('modalAddCommission').classList.remove('active')">বাতিল</button>
+        <button type="button" id="btnSaveCommModal" class="btn btn-primary" onclick="window.lfpApp.saveNewCommissionParcel()">সংরক্ষণ করুন</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Logic Scripts -->
+  <script src="js/api.js?v=3.5"></script>
+  <script src="js/app.js?v=3.5"></script>
+</body>
+</html>
