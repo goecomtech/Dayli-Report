@@ -118,6 +118,8 @@ if ($useLocalDb) {
     $pdo = LfpDatabase::init();
 }
 
+$isMysql = (LfpDatabase::getDriver() === 'mysql');
+
 // 5. Handle Actions with Local Database (Zero-Latency Instant Responses)
 if ($pdo && !empty($action)) {
     try {
@@ -167,20 +169,21 @@ if ($pdo && !empty($action)) {
                     $empId = 'EMP-' . $maxId;
                 }
 
-                $stmt = $pdo->prepare("
-                    INSERT INTO lfp_users (employee_id, name, phone, email, password, role, designation, status)
-                    VALUES (:id, :name, :phone, :email, :password, :role, :designation, :status)
-                    ON CONFLICT(employee_id) DO UPDATE SET
-                        name = excluded.name, phone = excluded.phone, email = excluded.email,
-                        password = excluded.password, role = excluded.role, designation = excluded.designation, status = excluded.status
-                ");
-                if (LfpDatabase::getDriver() === 'mysql') {
+                if ($isMysql) {
                     $stmt = $pdo->prepare("
                         INSERT INTO lfp_users (employee_id, name, phone, email, password, role, designation, status)
                         VALUES (:id, :name, :phone, :email, :password, :role, :designation, :status)
                         ON DUPLICATE KEY UPDATE
                             name = VALUES(name), phone = VALUES(phone), email = VALUES(email),
                             password = VALUES(password), role = VALUES(role), designation = VALUES(designation), status = VALUES(status)
+                    ");
+                } else {
+                    $stmt = $pdo->prepare("
+                        INSERT INTO lfp_users (employee_id, name, phone, email, password, role, designation, status)
+                        VALUES (:id, :name, :phone, :email, :password, :role, :designation, :status)
+                        ON CONFLICT(employee_id) DO UPDATE SET
+                            name = excluded.name, phone = excluded.phone, email = excluded.email,
+                            password = excluded.password, role = excluded.role, designation = excluded.designation, status = excluded.status
                     ");
                 }
                 $stmt->execute([
@@ -251,7 +254,6 @@ if ($pdo && !empty($action)) {
                         'status' => $r['status']
                     ];
 
-                    // Fetch commissions and advances for this report
                     $commStmt = $pdo->prepare("SELECT sl, customer_phone AS customerPhone, product_details AS productDetails, pieces, commission_amount AS commissionAmount FROM lfp_commissions WHERE employee_id = :emp AND date = :dt ORDER BY sl ASC");
                     $commStmt->execute([':emp' => $empId, ':dt' => $date]);
                     $report['commissions'] = $commStmt->fetchAll();
@@ -278,31 +280,7 @@ if ($pdo && !empty($action)) {
                     exit;
                 }
 
-                $stmt = $pdo->prepare("
-                    INSERT INTO lfp_reports (
-                        date, day, employee_id, employee_name, arrival_time, departure_time, work_steps_json,
-                        total_confirmed_orders, cancelled_orders, total_discounts, followups_count, repeat_orders_count,
-                        fb_posts_count, packaging_pcs, commission_pcs, commission_total_amount, advance_count, advance_total_amount,
-                        eod_status, eod_arrival, eod_departure, eod_tasks_summary, eod_challenges, eod_tomorrow_plan, signature_data, status
-                    ) VALUES (
-                        :date, :day, :emp_id, :emp_name, :arr, :dep, :steps,
-                        :conf, :canc, :disc, :foll, :rep,
-                        :fb, :pkg, :comm_pcs, :comm_tot, :adv_cnt, :adv_tot,
-                        :eod_st, :eod_arr, :eod_dep, :eod_sum, :eod_chal, :eod_plan, :sig, :status
-                    ) ON CONFLICT(date, employee_id) DO UPDATE SET
-                        day = excluded.day, employee_name = excluded.employee_name,
-                        arrival_time = excluded.arrival_time, departure_time = excluded.departure_time,
-                        work_steps_json = excluded.work_steps_json, total_confirmed_orders = excluded.total_confirmed_orders,
-                        cancelled_orders = excluded.cancelled_orders, total_discounts = excluded.total_discounts,
-                        followups_count = excluded.followups_count, repeat_orders_count = excluded.repeat_orders_count,
-                        fb_posts_count = excluded.fb_posts_count, packaging_pcs = excluded.packaging_pcs,
-                        commission_pcs = excluded.commission_pcs, commission_total_amount = excluded.commission_total_amount,
-                        advance_count = excluded.advance_count, advance_total_amount = excluded.advance_total_amount,
-                        eod_status = excluded.eod_status, eod_arrival = excluded.eod_arrival, eod_departure = excluded.eod_departure,
-                        eod_tasks_summary = excluded.eod_tasks_summary, eod_challenges = excluded.eod_challenges,
-                        eod_tomorrow_plan = excluded.eod_tomorrow_plan, signature_data = excluded.signature_data, status = excluded.status
-                ");
-                if (LfpDatabase::getDriver() === 'mysql') {
+                if ($isMysql) {
                     $stmt = $pdo->prepare("
                         INSERT INTO lfp_reports (
                             date, day, employee_id, employee_name, arrival_time, departure_time, work_steps_json,
@@ -326,6 +304,31 @@ if ($pdo && !empty($action)) {
                             eod_status = VALUES(eod_status), eod_arrival = VALUES(eod_arrival), eod_departure = VALUES(eod_departure),
                             eod_tasks_summary = VALUES(eod_tasks_summary), eod_challenges = VALUES(eod_challenges),
                             eod_tomorrow_plan = VALUES(eod_tomorrow_plan), signature_data = VALUES(signature_data), status = VALUES(status)
+                    ");
+                } else {
+                    $stmt = $pdo->prepare("
+                        INSERT INTO lfp_reports (
+                            date, day, employee_id, employee_name, arrival_time, departure_time, work_steps_json,
+                            total_confirmed_orders, cancelled_orders, total_discounts, followups_count, repeat_orders_count,
+                            fb_posts_count, packaging_pcs, commission_pcs, commission_total_amount, advance_count, advance_total_amount,
+                            eod_status, eod_arrival, eod_departure, eod_tasks_summary, eod_challenges, eod_tomorrow_plan, signature_data, status
+                        ) VALUES (
+                            :date, :day, :emp_id, :emp_name, :arr, :dep, :steps,
+                            :conf, :canc, :disc, :foll, :rep,
+                            :fb, :pkg, :comm_pcs, :comm_tot, :adv_cnt, :adv_tot,
+                            :eod_st, :eod_arr, :eod_dep, :eod_sum, :eod_chal, :eod_plan, :sig, :status
+                        ) ON CONFLICT(date, employee_id) DO UPDATE SET
+                            day = excluded.day, employee_name = excluded.employee_name,
+                            arrival_time = excluded.arrival_time, departure_time = excluded.departure_time,
+                            work_steps_json = excluded.work_steps_json, total_confirmed_orders = excluded.total_confirmed_orders,
+                            cancelled_orders = excluded.cancelled_orders, total_discounts = excluded.total_discounts,
+                            followups_count = excluded.followups_count, repeat_orders_count = excluded.repeat_orders_count,
+                            fb_posts_count = excluded.fb_posts_count, packaging_pcs = excluded.packaging_pcs,
+                            commission_pcs = excluded.commission_pcs, commission_total_amount = excluded.commission_total_amount,
+                            advance_count = excluded.advance_count, advance_total_amount = excluded.advance_total_amount,
+                            eod_status = excluded.eod_status, eod_arrival = excluded.eod_arrival, eod_departure = excluded.eod_departure,
+                            eod_tasks_summary = excluded.eod_tasks_summary, eod_challenges = excluded.eod_challenges,
+                            eod_tomorrow_plan = excluded.eod_tomorrow_plan, signature_data = excluded.signature_data, status = excluded.status
                     ");
                 }
 
@@ -362,20 +365,21 @@ if ($pdo && !empty($action)) {
                 if (!empty($report['commissions']) && is_array($report['commissions'])) {
                     foreach ($report['commissions'] as $c) {
                         $commId = "COMM_{$date}_{$empId}_" . ($c['sl'] ?? 1);
-                        $cStmt = $pdo->prepare("
-                            INSERT INTO lfp_commissions (commission_id, date, employee_id, employee_name, sl, customer_phone, product_details, pieces, commission_amount)
-                            VALUES (:id, :date, :emp, :name, :sl, :phone, :prod, :pcs, :amt)
-                            ON CONFLICT(commission_id) DO UPDATE SET
-                                customer_phone = excluded.customer_phone, product_details = excluded.product_details,
-                                pieces = excluded.pieces, commission_amount = excluded.commission_amount
-                        ");
-                        if (LfpDatabase::getDriver() === 'mysql') {
+                        if ($isMysql) {
                             $cStmt = $pdo->prepare("
                                 INSERT INTO lfp_commissions (commission_id, date, employee_id, employee_name, sl, customer_phone, product_details, pieces, commission_amount)
                                 VALUES (:id, :date, :emp, :name, :sl, :phone, :prod, :pcs, :amt)
                                 ON DUPLICATE KEY UPDATE
                                     customer_phone = VALUES(customer_phone), product_details = VALUES(product_details),
                                     pieces = VALUES(pieces), commission_amount = VALUES(commission_amount)
+                            ");
+                        } else {
+                            $cStmt = $pdo->prepare("
+                                INSERT INTO lfp_commissions (commission_id, date, employee_id, employee_name, sl, customer_phone, product_details, pieces, commission_amount)
+                                VALUES (:id, :date, :emp, :name, :sl, :phone, :prod, :pcs, :amt)
+                                ON CONFLICT(commission_id) DO UPDATE SET
+                                    customer_phone = excluded.customer_phone, product_details = excluded.product_details,
+                                    pieces = excluded.pieces, commission_amount = excluded.commission_amount
                             ");
                         }
                         $cStmt->execute([
@@ -406,20 +410,21 @@ if ($pdo && !empty($action)) {
                         }
                     }
 
-                    $attStmt = $pdo->prepare("
-                        INSERT INTO lfp_attendance (date, employee_id, employee_name, arrival_time, departure_time, status, late_minutes, overtime_hours)
-                        VALUES (:date, :emp, :name, :arr, :dep, :status, :late, 0)
-                        ON CONFLICT(date, employee_id) DO UPDATE SET
-                            arrival_time = excluded.arrival_time, departure_time = excluded.departure_time,
-                            status = excluded.status, late_minutes = excluded.late_minutes
-                    ");
-                    if (LfpDatabase::getDriver() === 'mysql') {
+                    if ($isMysql) {
                         $attStmt = $pdo->prepare("
                             INSERT INTO lfp_attendance (date, employee_id, employee_name, arrival_time, departure_time, status, late_minutes, overtime_hours)
                             VALUES (:date, :emp, :name, :arr, :dep, :status, :late, 0)
                             ON DUPLICATE KEY UPDATE
                                 arrival_time = VALUES(arrival_time), departure_time = VALUES(departure_time),
                                 status = VALUES(status), late_minutes = VALUES(late_minutes)
+                        ");
+                    } else {
+                        $attStmt = $pdo->prepare("
+                            INSERT INTO lfp_attendance (date, employee_id, employee_name, arrival_time, departure_time, status, late_minutes, overtime_hours)
+                            VALUES (:date, :emp, :name, :arr, :dep, :status, :late, 0)
+                            ON CONFLICT(date, employee_id) DO UPDATE SET
+                                arrival_time = excluded.arrival_time, departure_time = excluded.departure_time,
+                                status = excluded.status, late_minutes = excluded.late_minutes
                         ");
                     }
                     $attStmt->execute([
@@ -483,7 +488,6 @@ if ($pdo && !empty($action)) {
                 $stmt->execute($params);
                 $items = $stmt->fetchAll();
 
-                // Compute summary statistics
                 $totalParcels = count($items);
                 $deliveredCount = 0;
                 $totalPotentialCommission = 0;
@@ -521,7 +525,6 @@ if ($pdo && !empty($action)) {
                 $deliveryStatus = trim($body['deliveryStatus'] ?? '');
                 $partialAmount = (float)($body['partialAmount'] ?? 0);
 
-                // Verify payout status lock
                 $checkStmt = $pdo->prepare("SELECT payout_status FROM lfp_commissions WHERE commission_id = :id");
                 $checkStmt->execute([':id' => $commId]);
                 $cur = $checkStmt->fetch();
@@ -543,7 +546,6 @@ if ($pdo && !empty($action)) {
                 $item = $body['item'] ?? [];
                 $commId = trim($item['commissionId'] ?? ('COMM_' . date('Y-m-d') . '_' . ($item['employeeId'] ?? '') . '_' . time()));
 
-                // Check lock
                 $checkStmt = $pdo->prepare("SELECT payout_status FROM lfp_commissions WHERE commission_id = :id");
                 $checkStmt->execute([':id' => $commId]);
                 $cur = $checkStmt->fetch();
@@ -552,15 +554,7 @@ if ($pdo && !empty($action)) {
                     exit;
                 }
 
-                $stmt = $pdo->prepare("
-                    INSERT INTO lfp_commissions (commission_id, date, employee_id, employee_name, sl, customer_phone, product_details, pieces, commission_amount, delivery_status, partial_amount, notes)
-                    VALUES (:id, :date, :emp, :name, :sl, :phone, :prod, :pcs, :amt, :deliv, :part, :notes)
-                    ON CONFLICT(commission_id) DO UPDATE SET
-                        customer_phone = excluded.customer_phone, product_details = excluded.product_details,
-                        pieces = excluded.pieces, commission_amount = excluded.commission_amount,
-                        delivery_status = excluded.delivery_status, partial_amount = excluded.partial_amount, notes = excluded.notes
-                ");
-                if (LfpDatabase::getDriver() === 'mysql') {
+                if ($isMysql) {
                     $stmt = $pdo->prepare("
                         INSERT INTO lfp_commissions (commission_id, date, employee_id, employee_name, sl, customer_phone, product_details, pieces, commission_amount, delivery_status, partial_amount, notes)
                         VALUES (:id, :date, :emp, :name, :sl, :phone, :prod, :pcs, :amt, :deliv, :part, :notes)
@@ -568,6 +562,15 @@ if ($pdo && !empty($action)) {
                             customer_phone = VALUES(customer_phone), product_details = VALUES(product_details),
                             pieces = VALUES(pieces), commission_amount = VALUES(commission_amount),
                             delivery_status = VALUES(delivery_status), partial_amount = VALUES(partial_amount), notes = VALUES(notes)
+                    ");
+                } else {
+                    $stmt = $pdo->prepare("
+                        INSERT INTO lfp_commissions (commission_id, date, employee_id, employee_name, sl, customer_phone, product_details, pieces, commission_amount, delivery_status, partial_amount, notes)
+                        VALUES (:id, :date, :emp, :name, :sl, :phone, :prod, :pcs, :amt, :deliv, :part, :notes)
+                        ON CONFLICT(commission_id) DO UPDATE SET
+                            customer_phone = excluded.customer_phone, product_details = excluded.product_details,
+                            pieces = excluded.pieces, commission_amount = excluded.commission_amount,
+                            delivery_status = excluded.delivery_status, partial_amount = excluded.partial_amount, notes = excluded.notes
                     ");
                 }
                 $stmt->execute([
@@ -653,14 +656,15 @@ if ($pdo && !empty($action)) {
                 $sched = $body['schedule'] ?? [];
                 $json = json_encode($sched, JSON_UNESCAPED_UNICODE);
 
-                $stmt = $pdo->prepare("
-                    INSERT INTO lfp_schedules (employee_id, schedule_json) VALUES (:id, :sched)
-                    ON CONFLICT(employee_id) DO UPDATE SET schedule_json = excluded.schedule_json
-                ");
-                if (LfpDatabase::getDriver() === 'mysql') {
+                if ($isMysql) {
                     $stmt = $pdo->prepare("
                         INSERT INTO lfp_schedules (employee_id, schedule_json) VALUES (:id, :sched)
                         ON DUPLICATE KEY UPDATE schedule_json = VALUES(schedule_json)
+                    ");
+                } else {
+                    $stmt = $pdo->prepare("
+                        INSERT INTO lfp_schedules (employee_id, schedule_json) VALUES (:id, :sched)
+                        ON CONFLICT(employee_id) DO UPDATE SET schedule_json = excluded.schedule_json
                     ");
                 }
                 $stmt->execute([':id' => $empId, ':sched' => $json]);
@@ -685,14 +689,15 @@ if ($pdo && !empty($action)) {
                 $settings = $body['settings'] ?? [];
                 $json = json_encode($settings, JSON_UNESCAPED_UNICODE);
 
-                $stmt = $pdo->prepare("
-                    INSERT INTO lfp_settings (key_name, value_data) VALUES ('general_settings', :val)
-                    ON CONFLICT(key_name) DO UPDATE SET value_data = excluded.value_data
-                ");
-                if (LfpDatabase::getDriver() === 'mysql') {
+                if ($isMysql) {
                     $stmt = $pdo->prepare("
                         INSERT INTO lfp_settings (key_name, value_data) VALUES ('general_settings', :val)
                         ON DUPLICATE KEY UPDATE value_data = VALUES(value_data)
+                    ");
+                } else {
+                    $stmt = $pdo->prepare("
+                        INSERT INTO lfp_settings (key_name, value_data) VALUES ('general_settings', :val)
+                        ON CONFLICT(key_name) DO UPDATE SET value_data = excluded.value_data
                     ");
                 }
                 $stmt->execute([':val' => $json]);
@@ -706,7 +711,6 @@ if ($pdo && !empty($action)) {
             case 'syncNow':
                 $direction = $body['direction'] ?? 'both';
                 if ($direction === 'pull') {
-                    // Forward to sync.php pull
                     require_once __DIR__ . '/sync.php';
                     exit;
                 } else {
@@ -717,7 +721,6 @@ if ($pdo && !empty($action)) {
         }
     } catch (Exception $e) {
         error_log("LFP Local DB Execution error: " . $e->getMessage() . " for action: " . $action);
-        // Fall back to direct Google Apps Script proxy if local execution fails
     }
 }
 

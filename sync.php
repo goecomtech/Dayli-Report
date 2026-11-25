@@ -5,7 +5,6 @@
  * Can be run via Cron Job, async HTTP trigger, or Admin Manual Sync.
  */
 
-// Allow longer execution for batch sync
 set_time_limit(180);
 ignore_user_abort(true);
 
@@ -32,7 +31,7 @@ if (empty($gasUrl)) {
     exit;
 }
 
-$action = $_GET['action'] ?? $_POST['action'] ?? 'processQueue';
+$action = $_GET['action'] ?? ($_POST['action'] ?? 'processQueue');
 
 /**
  * Helper to call Google Apps Script
@@ -77,28 +76,26 @@ if ($action === 'pullFromGoogle') {
     ];
 
     try {
+        $isMysql = (LfpDatabase::getDriver() === 'mysql');
+
         // A. Import Users
         $empRes = callGoogleAppsScript($gasUrl, ['action' => 'getEmployees']);
         if (!empty($empRes['employees']) && is_array($empRes['employees'])) {
-            $userStmt = $pdo->prepare("
-                INSERT INTO lfp_users (employee_id, name, phone, email, password, role, designation, status)
-                VALUES (:employee_id, :name, :phone, :email, :password, :role, :designation, :status)
-                ON CONFLICT(employee_id) DO UPDATE SET
-                    name = excluded.name,
-                    phone = excluded.phone,
-                    email = excluded.email,
-                    password = excluded.password,
-                    role = excluded.role,
-                    designation = excluded.designation,
-                    status = excluded.status
-            ");
-            if (LfpDatabase::getDriver() === 'mysql') {
+            if ($isMysql) {
                 $userStmt = $pdo->prepare("
                     INSERT INTO lfp_users (employee_id, name, phone, email, password, role, designation, status)
                     VALUES (:employee_id, :name, :phone, :email, :password, :role, :designation, :status)
                     ON DUPLICATE KEY UPDATE
                         name = VALUES(name), phone = VALUES(phone), email = VALUES(email),
                         password = VALUES(password), role = VALUES(role), designation = VALUES(designation), status = VALUES(status)
+                ");
+            } else {
+                $userStmt = $pdo->prepare("
+                    INSERT INTO lfp_users (employee_id, name, phone, email, password, role, designation, status)
+                    VALUES (:employee_id, :name, :phone, :email, :password, :role, :designation, :status)
+                    ON CONFLICT(employee_id) DO UPDATE SET
+                        name = excluded.name, phone = excluded.phone, email = excluded.email,
+                        password = excluded.password, role = excluded.role, designation = excluded.designation, status = excluded.status
                 ");
             }
             foreach ($empRes['employees'] as $u) {
@@ -119,16 +116,7 @@ if ($action === 'pullFromGoogle') {
         // B. Import Commissions
         $commRes = callGoogleAppsScript($gasUrl, ['action' => 'getCommissions']);
         if (!empty($commRes['items']) && is_array($commRes['items'])) {
-            $commStmt = $pdo->prepare("
-                INSERT INTO lfp_commissions (commission_id, date, employee_id, employee_name, sl, customer_phone, product_details, pieces, commission_amount, delivery_status, partial_amount, payout_status, payout_date, notes)
-                VALUES (:comm_id, :date, :emp_id, :emp_name, :sl, :phone, :prod, :pcs, :amount, :deliv, :part, :payout, :payout_date, :notes)
-                ON CONFLICT(commission_id) DO UPDATE SET
-                    delivery_status = excluded.delivery_status,
-                    partial_amount = excluded.partial_amount,
-                    payout_status = excluded.payout_status,
-                    payout_date = excluded.payout_date
-            ");
-            if (LfpDatabase::getDriver() === 'mysql') {
+            if ($isMysql) {
                 $commStmt = $pdo->prepare("
                     INSERT INTO lfp_commissions (commission_id, date, employee_id, employee_name, sl, customer_phone, product_details, pieces, commission_amount, delivery_status, partial_amount, payout_status, payout_date, notes)
                     VALUES (:comm_id, :date, :emp_id, :emp_name, :sl, :phone, :prod, :pcs, :amount, :deliv, :part, :payout, :payout_date, :notes)
@@ -137,6 +125,16 @@ if ($action === 'pullFromGoogle') {
                         partial_amount = VALUES(partial_amount),
                         payout_status = VALUES(payout_status),
                         payout_date = VALUES(payout_date)
+                ");
+            } else {
+                $commStmt = $pdo->prepare("
+                    INSERT INTO lfp_commissions (commission_id, date, employee_id, employee_name, sl, customer_phone, product_details, pieces, commission_amount, delivery_status, partial_amount, payout_status, payout_date, notes)
+                    VALUES (:comm_id, :date, :emp_id, :emp_name, :sl, :phone, :prod, :pcs, :amount, :deliv, :part, :payout, :payout_date, :notes)
+                    ON CONFLICT(commission_id) DO UPDATE SET
+                        delivery_status = excluded.delivery_status,
+                        partial_amount = excluded.partial_amount,
+                        payout_status = excluded.payout_status,
+                        payout_date = excluded.payout_date
                 ");
             }
             foreach ($commRes['items'] as $item) {
@@ -163,17 +161,7 @@ if ($action === 'pullFromGoogle') {
         // C. Import Attendance
         $attRes = callGoogleAppsScript($gasUrl, ['action' => 'getAttendance', 'month' => date('Y-m')]);
         if (!empty($attRes['records']) && is_array($attRes['records'])) {
-            $attStmt = $pdo->prepare("
-                INSERT INTO lfp_attendance (date, employee_id, employee_name, arrival_time, departure_time, status, late_minutes, overtime_hours, notes)
-                VALUES (:date, :emp_id, :emp_name, :arr, :dep, :status, :late, :ot, :notes)
-                ON CONFLICT(date, employee_id) DO UPDATE SET
-                    arrival_time = excluded.arrival_time,
-                    departure_time = excluded.departure_time,
-                    status = excluded.status,
-                    late_minutes = excluded.late_minutes,
-                    overtime_hours = excluded.overtime_hours
-            ");
-            if (LfpDatabase::getDriver() === 'mysql') {
+            if ($isMysql) {
                 $attStmt = $pdo->prepare("
                     INSERT INTO lfp_attendance (date, employee_id, employee_name, arrival_time, departure_time, status, late_minutes, overtime_hours, notes)
                     VALUES (:date, :emp_id, :emp_name, :arr, :dep, :status, :late, :ot, :notes)
@@ -183,6 +171,17 @@ if ($action === 'pullFromGoogle') {
                         status = VALUES(status),
                         late_minutes = VALUES(late_minutes),
                         overtime_hours = VALUES(overtime_hours)
+                ");
+            } else {
+                $attStmt = $pdo->prepare("
+                    INSERT INTO lfp_attendance (date, employee_id, employee_name, arrival_time, departure_time, status, late_minutes, overtime_hours, notes)
+                    VALUES (:date, :emp_id, :emp_name, :arr, :dep, :status, :late, :ot, :notes)
+                    ON CONFLICT(date, employee_id) DO UPDATE SET
+                        arrival_time = excluded.arrival_time,
+                        departure_time = excluded.departure_time,
+                        status = excluded.status,
+                        late_minutes = excluded.late_minutes,
+                        overtime_hours = excluded.overtime_hours
                 ");
             }
             foreach ($attRes['records'] as $r) {
@@ -204,16 +203,17 @@ if ($action === 'pullFromGoogle') {
         // D. Import Settings
         $settRes = callGoogleAppsScript($gasUrl, ['action' => 'getSettings']);
         if (!empty($settRes['settings']) && is_array($settRes['settings'])) {
-            $settStmt = $pdo->prepare("
-                INSERT INTO lfp_settings (key_name, value_data)
-                VALUES ('general_settings', :val)
-                ON CONFLICT(key_name) DO UPDATE SET value_data = excluded.value_data
-            ");
-            if (LfpDatabase::getDriver() === 'mysql') {
+            if ($isMysql) {
                 $settStmt = $pdo->prepare("
                     INSERT INTO lfp_settings (key_name, value_data)
                     VALUES ('general_settings', :val)
                     ON DUPLICATE KEY UPDATE value_data = VALUES(value_data)
+                ");
+            } else {
+                $settStmt = $pdo->prepare("
+                    INSERT INTO lfp_settings (key_name, value_data)
+                    VALUES ('general_settings', :val)
+                    ON CONFLICT(key_name) DO UPDATE SET value_data = excluded.value_data
                 ");
             }
             $settStmt->execute([':val' => json_encode($settRes['settings'], JSON_UNESCAPED_UNICODE)]);
@@ -260,20 +260,15 @@ foreach ($items as $item) {
     $itemId = $item['id'];
     $actionName = $item['action_name'];
     $payload = json_decode($item['payload_json'], true) ?: [];
-
-    // Ensure action is set
     $payload['action'] = $actionName;
 
-    // Send to Google Sheets
     $res = callGoogleAppsScript($gasUrl, $payload);
 
     if (!empty($res['success'])) {
-        // Mark completed
         $upd = $pdo->prepare("UPDATE lfp_sync_queue SET status = 'completed', updated_at = CURRENT_TIMESTAMP WHERE id = :id");
         $upd->execute([':id' => $itemId]);
         $processed++;
     } else {
-        // Mark failed or retry
         $errMsg = $res['message'] ?? 'Unknown sync failure';
         $attempts = (int)$item['attempts'] + 1;
         $status = ($attempts >= 5) ? 'failed' : 'pending';
@@ -292,9 +287,13 @@ foreach ($items as $item) {
     }
 }
 
-// Auto clean completed items older than 7 days
+// Auto clean completed items
 try {
-    $pdo->exec("DELETE FROM lfp_sync_queue WHERE status = 'completed' AND created_at < datetime('now', '-7 days')");
+    if (LfpDatabase::getDriver() === 'mysql') {
+        $pdo->exec("DELETE FROM lfp_sync_queue WHERE status = 'completed' AND created_at < DATE_SUB(NOW(), INTERVAL 7 DAY)");
+    } else {
+        $pdo->exec("DELETE FROM lfp_sync_queue WHERE status = 'completed' AND created_at < datetime('now', '-7 days')");
+    }
 } catch (Exception $e) {}
 
 echo json_encode([
